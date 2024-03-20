@@ -1,0 +1,58 @@
+<html>
+<head>
+    <title>Home</title>
+</head>
+<body>
+    <h1>Home</h1>
+
+<script>
+
+    const hello = {
+        command: "send_message",
+        payload: {
+            content: "Hello !",
+            room: "nice-room"
+        },
+    }
+
+    const join = {
+        command: "join",
+        payload: {
+            room: "nice-room"
+        }
+    }
+
+    const leave = {
+        command: "leave",
+        payload: {
+            room: "nice-room"
+        }
+    }
+
+    
+    // Create WebSocket connection.
+    const socket = new WebSocket("ws://localhost:8080/ws");
+
+    // Connection opened
+    socket.addEventListener("open", (event) => {
+        console.log("Connected to server");
+    });
+
+    // Listen on error:
+    socket.addEventListener("error", (event) => {
+        console.log("Error: ", event);
+    });
+
+    // Listen for messages
+    socket.addEventListener("message", (event) => {
+        console.log("Message from server ", event.data);
+    });
+
+    function send(msg) {
+        socket.send(JSON.stringify(msg));
+    }
+
+
+</script>
+</body>
+</html>
