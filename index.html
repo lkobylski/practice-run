@@ -22,6 +22,21 @@
         }
     }
 
+
+    const join2 = {
+        command: "join",
+        payload: {
+            room: "blue-room"
+        }
+    }
+
+    const join3 = {
+        command: "join",
+        payload: {
+            room: "orange-room"
+        }
+    }
+
     const leave = {
         command: "leave",
         payload: {
@@ -29,7 +44,7 @@
         }
     }
 
-    
+
     // Create WebSocket connection.
     const socket = new WebSocket("ws://localhost:8080/ws");
 
@@ -45,7 +60,7 @@
 
     // Listen for messages
     socket.addEventListener("message", (event) => {
-        console.log("Message from server ", event.data);
+        console.log("MESSAGE: ", event.data);
     });
 
     function send(msg) {

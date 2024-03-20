@@ -1,9 +1,15 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -23,11 +29,29 @@ func main() {
 		fmt.Println("req")
 		serveWs(w, r)
 	})
-	fmt.Println("server started")
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
+
+	server := &http.Server{Addr: ":8080", Handler: nil}
+
+	go func() {
+		log.Println("Server Started on :8080")
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("ListenAndServe(): %v", err)
+		}
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	<-c
+	log.Println("\nShutting down gracefully...\n")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("Server Shutdown Failed:%+v", err)
 	}
+	log.Println("Server Exited Properly")
+
 }
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +69,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	defer func(conn *websocket.Conn) {
 		err := conn.Close()
 		if err != nil {
-
+			log.Println(err)
 		}
 	}(conn)
 
@@ -58,7 +82,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		messageType, raw, err := conn.ReadMessage()
 		if err != nil {
 			log.Println(err)
-			return
+			break
 		}
 
 		if messageType != websocket.TextMessage {
@@ -71,24 +95,10 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 			log.Printf("error handling message: %s", err)
 			continue
 		}
-
-		//// TODO: bug
-		//err = chat.CreateRoom(string(raw))
-		//if err != nil {
-		//	if err := conn.WriteMessage(websocket.TextMessage, []byte(err.Error())); err != nil {
-		//		log.Println(err)
-		//		return
-		//	}
-		//	continue
-		//}
-
-		//resMessage := fmt.Sprintf("created room with name %s", string(raw))
-		//if err := conn.WriteMessage(websocket.TextMessage, []byte(resMessage)); err != nil {
-		//	log.Println(err)
-		//	return
-		//}
 	}
 
-	//clean up
-
+	log.Println("User has been disconnected")
+	for _, room := range client.rooms {
+		room.Leave(client)
+	}
 }

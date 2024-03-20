@@ -37,16 +37,14 @@ func handleMessage(client *Client, message []byte) error {
 	switch m.Command {
 	case CMD_JOIN:
 		return handleJoin(client, m)
-
 	case CMD_LEAVE:
-		fmt.Println("leave")
+		return handleLeave(client, m)
 	case CMD_SEND_MESSAGE:
 		return handleSendMessage(client, m)
 	default:
 		return fmt.Errorf("unknown command: %s", m.Command)
 	}
 
-	return nil
 }
 
 func handleSendMessage(client *Client, message Message) error {
@@ -65,6 +63,23 @@ func handleSendMessage(client *Client, message Message) error {
 
 	return nil
 
+}
+
+func handleLeave(client *Client, message Message) error {
+	var leaveMsg LeaveRoomMessage
+	err := json.Unmarshal(message.Payload, &leaveMsg)
+	if err != nil {
+		return err
+	}
+
+	room, ok := chat.rooms[leaveMsg.Room]
+	if !ok {
+		return fmt.Errorf("room %s does not exist", leaveMsg.Room)
+	}
+
+	room.Leave(client)
+
+	return nil
 }
 
 func handleJoin(client *Client, message Message) error {
