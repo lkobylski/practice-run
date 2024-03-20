@@ -24,6 +24,7 @@ var chat = &Chat{
 }
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("req")
